@@ -1,3 +1,6 @@
+import 'dart:io';
+
+import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 
 import './models/transaction.dart';
@@ -8,6 +11,9 @@ import 'package:flutter/material.dart';
 import './widgets/chart.dart';
 
 void main() {
+  // WidgetsFlutterBinding.ensureInitialized();
+  // SystemChrome.setPreferredOrientations(
+  //     [DeviceOrientation.portraitDown, DeviceOrientation.portraitUp]);
   runApp(MyApp());
 }
 
@@ -52,6 +58,7 @@ class MyHomePageState extends State<MyHomePage> {
         });
   }
 
+  bool check = false;
   List<Transaction> get _recentTransaction {
     return Usertransactions.where((element) {
       return element.date.isAfter(
@@ -64,22 +71,68 @@ class MyHomePageState extends State<MyHomePage> {
 
   @override
   Widget build(BuildContext context) {
+    final isLandscape =
+        MediaQuery.of(context).orientation == Orientation.landscape;
+    AppBar appBr = AppBar(
+      title: Text('Flutter App'),
+      actions: [
+        IconButton(onPressed: () {}, icon: Icon(Icons.add)),
+      ],
+    );
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Flutter App'),
-        actions: [
-          IconButton(onPressed: () {}, icon: Icon(Icons.add)),
-        ],
-      ),
+      appBar: appBr,
       body: !Usertransactions.isEmpty
           ? SingleChildScrollView(
               child: Column(
                 children: [
-                  Container(
-                    width: double.infinity,
-                    child: MyChart(_recentTransaction),
-                  ),
-                  TransactionList(Usertransactions),
+                  if (isLandscape)
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text('show chart'),
+                        Switch.adaptive(
+                            value: check,
+                            onChanged: (val) {
+                              setState(() {
+                                check = val;
+                              });
+                            })
+                      ],
+                    ),
+                  if (isLandscape)
+                    check
+                        ? Container(
+                            width: double.infinity,
+                            child: Container(
+                                height: (MediaQuery.of(context).size.height -
+                                        appBr.preferredSize.height -
+                                        (MediaQuery.of(context).padding.top)) *
+                                    0.7,
+                                child: MyChart(_recentTransaction)),
+                          )
+                        : Container(
+                            height: (MediaQuery.of(context).size.height -
+                                    appBr.preferredSize.height -
+                                    (MediaQuery.of(context).padding.top)) *
+                                0.7,
+                            child: TransactionList(Usertransactions)),
+                  if (!isLandscape)
+                    Container(
+                      width: double.infinity,
+                      child: Container(
+                          height: (MediaQuery.of(context).size.height -
+                                  appBr.preferredSize.height -
+                                  (MediaQuery.of(context).padding.top)) *
+                              0.3,
+                          child: MyChart(_recentTransaction)),
+                    ),
+                  if (!isLandscape)
+                    Container(
+                        height: (MediaQuery.of(context).size.height -
+                                appBr.preferredSize.height -
+                                (MediaQuery.of(context).padding.top)) *
+                            0.7,
+                        child: TransactionList(Usertransactions)),
                 ],
               ),
             )
@@ -101,12 +154,14 @@ class MyHomePageState extends State<MyHomePage> {
               ],
             ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          _startAddNewTransaction(context);
-        },
-        child: Icon(Icons.add),
-      ),
+      floatingActionButton: Platform.isIOS
+          ? Container()
+          : FloatingActionButton(
+              onPressed: () {
+                _startAddNewTransaction(context);
+              },
+              child: Icon(Icons.add),
+            ),
     );
   }
 }
